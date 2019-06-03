@@ -1,0 +1,34 @@
+{{#if hasResult}}
+<div>
+    <span>
+        <a class="button" {{#if noPrevious}}disabled{{else}}href="/search?title={{query}}&page={{previousPage}}"{{/if}}>Previous Page</a>
+    </span>
+    <span>
+        <a class="button" {{#if noNext}}disabled{{else}}href="/search?title={{query}}&page={{nextPage}}"{{/if}}>Next Page</a>
+    </span>
+</div>
+<div class="is-size-4">
+    Displaying {{firstNum}} to {{lastNum}} of {{numFilms}}
+</div>
+<div class="tile is-ancestor is-vertical">
+        {{#each films as |clusterOf4|}}
+        <div class="tile is-parent">
+            {{#each clusterOf4}}
+            <div class="tile is-parent is-3">
+                <a href="/film/{{this.film_id}}">
+                    <div class="tile is-child box has-background-grey-lighter" style="height: 100%">
+                        <div class="title is-5 has-text-primary" style="height: 44px">{{this.title}}</div>
+                        <div>
+                            <p>{{this.description}}</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {{/each}}
+        </div>
+        {{/each}}
+</div>
+{{else}}
+<h2 class="is-size-4">No results for query <span class="has-text-black"><em>{{query}}</em></span></h2>
+
+{{/if}}

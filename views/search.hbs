@@ -1,0 +1,18 @@
+<table class="table is-bordered is-striped">
+    <thead class="is-size-4 has-text-centered is-uppercase has-text-weight-bold">
+        <tr>
+            <td class="title is-4 is-primary">#</td>
+            <td class="title is-4 is-primary">Title</td>
+            <td class="title is-4 is-primary">Description</tde>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each movies}}
+        <tr>
+            <td>{{@key}}</td>
+            <td><a href="/film/{{this.film_id}}">{{this.title}}</a></td>
+            <td>{{this.description}}</td>
+        </tr>
+        {{/each}}
+    </tbody>
+</table>

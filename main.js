@@ -28,62 +28,33 @@ app.set('view engine', 'hbs');
 app.set('views', __dirname + '/views');
 
 //helper functions
-const getFilmSearchCount = async function(title) {
-    return new Promise((resolve, reject) => {
-        pool.getConnection((err, conn) => {
-            if (err) {
-                res.status(500);
-                res.type('text/plain');
-                res.send(err);
-                reject(0);
-            }
-
-            conn.query(sqlCountFilmSearchTitle,
-                [`%${title}%`],
-                (err, result) => {
-                    conn.release();
-
-                    if (err) {
-                        res.status(500);
-                        res.type('text/plain');
-                        res.send(err);
-                        reject(0);
-                    }
-
-                    resolve(result[0]['count(*)']);
+const createQuery = (pool, sqlQuery) => {
+    return ((params) => {
+        return new Promise((resolve, reject) => {
+            pool.getConnection((err, conn) => {
+                if (err) {
+                    reject(err);
                 }
-            )
-        })
-    })
-}
+                else {
+                    conn.query(sqlQuery, params || [], (err, result) => {
+                        conn.release();
 
-const getFilmSearchTitle = async function(title, offset) {
-    return new Promise((resolve, reject) => {
-        pool.getConnection((err, conn) => {
-            if (err) {
-                res.status(500);
-                res.type('text/plain');
-                res.send(err);
-                reject (err);
-            }
-
-            conn.query(sqlSelectFilmSearchTitle,
-                [`%${title}%`, offset],
-                (err, result) => {
-                    conn.release();
-                    if (err) {
-                        res.status(500);
-                        res.type('text/plain');
-                        res.send(err);
-                        reject (err);
-                    }
-
-                    resolve(result);
+                        if (err) {
+                            reject(err);
+                        }
+                        else {
+                            resolve(result);
+                        }
+                    });
                 }
-            )
+            })
         });
     })
 }
+
+const getFilmSearchCount = createQuery(pool, sqlCountFilmSearchTitle);
+const getFilmSearchTitle = createQuery(pool, sqlSelectFilmSearchTitle);
+const getFilmById = createQuery(pool, sqlSelectFilmById);
 
 //implement routes
 app.get('/search', (req, res) => {
@@ -94,9 +65,9 @@ app.get('/search', (req, res) => {
         page = 0;
     }
 
-    Promise.all([getFilmSearchCount(title), getFilmSearchTitle(title, page * filmsPerPage)])
+    Promise.all([getFilmSearchCount([`%${title}%`]), getFilmSearchTitle([`%${title}%`, page * filmsPerPage])])
     .then(result => {
-        let numFilms = result[0];
+        let numFilms = result[0][0]['count(*)'];
         let filmList = result[1];
 
         let splitResult = [];
@@ -116,7 +87,7 @@ app.get('/search', (req, res) => {
                 numFilms: numFilms,
                 noPrevious: page <= 0,
                 previousPage: page - 1,
-                noNext: page >= Math.floor((numFilms / filmsPerPage)),
+                noNext: page >= Math.floor(((numFilms - 1) / filmsPerPage)),
                 nextPage: page + 1,
                 firstNum: page * filmsPerPage + 1,
                 lastNum: Math.min((page + 1) * filmsPerPage, numFilms)
@@ -131,30 +102,14 @@ app.get('/search', (req, res) => {
 app.get('/film/:filmid', (req, res) => {
     let filmid = req.params['filmid'];
 
-    pool.getConnection((err, conn) => {
-        if (err) {
-            res.status(500);
-            res.type('text/plain');
-            res.send(err);
-            return;
-        }
-
-        conn.query(sqlSelectFilmById, 
-            filmid,
-            (err, result) => {
-                conn.release();
-                if (err) {
-                    res.status(500);
-                    res.type('text/plain');
-                    res.send(err);
-                    return;
-                }
-
-                res.status(200);
-                res.type('text/plain');
-                res.send(result);
-            }
-        );
+    getFilmById([filmid])
+    .then(result => {
+        res.status(200);
+        res.type('text/plain');
+        res.send(result);
+    })
+    .catch(err => {
+        console.log(error);
     });
 });
 
